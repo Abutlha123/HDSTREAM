@@ -50,6 +50,14 @@
             padding: 20px; background: var(--card-bg); border-radius: var(--radius); 
             margin: 20px 0; border: 1px solid var(--border); width: 100%; box-sizing: border-box;
         }
+
+        .refresh-btn {
+            background: var(--accent); border: none; color: #000; 
+            padding: 8px 16px; border-radius: 8px; font-weight: 600; 
+            cursor: pointer; font-family: 'Poppins'; transition: 0.2s;
+        }
+        .refresh-btn:active { transform: scale(0.95); opacity: 0.8; }
+
         .grid-header { margin: 25px 0 15px; font-weight: 800; border-left: 4px solid var(--accent); padding-left: 15px; align-self: flex-start; }
         .channel-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; width: 100%; padding-bottom: 50px;}
         .channel-card {
@@ -76,8 +84,13 @@
         </div>
 
         <div class="channel-info">
-            <h2 id="currentName" style="margin:0; font-size:1.1rem;">Welcome to SK STAR</h2>
-            <p id="trafficInfo" style="margin: 5px 0 0; font-size: 12px; color: #888;">Traffic Optimizer Active</p>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h2 id="currentName" style="margin:0; font-size:1.1rem;">Welcome to SK STAR</h2>
+                    <p id="trafficInfo" style="margin: 5px 0 0; font-size: 12px; color: #888;">Optimized Stream Engine</p>
+                </div>
+                <button class="refresh-btn" onclick="refreshStream()">🔄 Refresh</button>
+            </div>
         </div>
 
         <div class="grid-header">Live Channels</div>
@@ -95,7 +108,7 @@
         { name: "Star Sports Telugu", url: "https://jiotvbpkmob.cdn.jio.com/bpk-tv/Star_Sports_1_Telugu_BTS/output/index.mpd", kId: "200a6dd89c6b5a48b9991d8ab57fc7d2", key: "1f62834669a97e92ea1f3263274853fc" }
     ];
 
-    let player, video, ui;
+    let player, video, ui, currentChannel;
     const authCookie = "__hdnea__=st=1772241887~exp=1772328287~acl=/*~hmac=c2276b495783dbb09e00bbbf9f38c98f7d06d932a86c8364b74b848141627e13";
 
     async function initApp() {
@@ -130,7 +143,7 @@
 
         video.addEventListener('waiting', () => updateStatus('Buffering...', false));
         video.addEventListener('playing', () => updateStatus('Live - Stable', true));
-        player.addEventListener('error', (e) => updateStatus('Traffic Error - Retrying...', false));
+        player.addEventListener('error', (e) => updateStatus('Stream Error - Retrying...', false));
         
         setupGrid();
         loadChannel(CHANNELS[0]);
@@ -145,13 +158,20 @@
     }
 
     async function loadChannel(ch) {
+        currentChannel = ch;
         try {
             updateStatus('Connecting...', false);
             document.getElementById('currentName').innerText = ch.name;
             await player.configure({ drm: { clearKeys: { [ch.kId]: ch.key } } });
             await player.load(ch.url);
             window.scrollTo({ top: 0, behavior: 'smooth' });
-        } catch (e) { updateStatus('Server Busy - Switching...', false); }
+        } catch (e) { 
+            updateStatus('Server Error - Try Refresh', false); 
+        }
+    }
+
+    function refreshStream() {
+        if(currentChannel) loadChannel(currentChannel);
     }
 
     function setupGrid() {
