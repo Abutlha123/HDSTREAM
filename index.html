@@ -2,33 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JD Player - New Source</title>
+    <title>JD Player - Lag Fix</title>
     
     <script src="https://content.jwplatform.com/libraries/SAHhwvZq.js"></script>
 
     <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #000;
-            overflow: hidden;
-        }
-
-        #player {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100% !important;
-            height: 100% !important;
-        }
-
-        .jwplayer.jw-flag-aspect-mode {
-            min-height: 100vh;
-        }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: #000; overflow: hidden; }
+        #player { position: absolute; top: 0; left: 0; width: 100% !important; height: 100% !important; }
     </style>
 </head>
 <body>
@@ -38,10 +19,9 @@
     <script>
         const playerInstance = jwplayer("player").setup({
             playlist: [{
-                title: "JD Live Stream - Updated",
+                title: "JD Live Stream",
                 image: "https://i.ibb.co/Wvjr6mD/20240119-191942.png",
                 sources: [{
-                    // Naya updated MPD link
                     file: "https://ta.bia-cf.live.pv-cdn.net/bom-nitro/live/clients/dash/enc/hp0lefwcem/out/v1/925bb83b4490417fa9c536dde0104939/cenc.mpd",
                     type: "dash",
                     drm: {
@@ -54,20 +34,42 @@
             }],
             width: "100%",
             height: "100%",
-            aspectratio: "16:9",
             autostart: true,
+            mute: false,
+            volume: 100,
             controls: true,
-            stretching: "uniform",
-            cast: {} 
+            // --- Lag aur Buffering Fix Settings ---
+            dashjsConfig: {
+                debug: { logLimit: 1 },
+                streaming: {
+                    buffer: {
+                        bufferTimeAtTopQuality: 30, // 30 seconds buffer load karega
+                        stableBufferTime: 20,
+                        initialBufferLevel: 10
+                    },
+                    lowLatencyEnabled: true,
+                    abr: {
+                        initialBitrate: { audio: -1, video: 500 } // Kam speed se start hoga taaki atke nahi
+                    }
+                }
+            },
+            // ---------------------------------------
+            visualquality: true,
+            stretching: "uniform"
         });
 
-        // Error Handling
-        playerInstance.on('setupError', function(e) {
-            console.error("JW Player setup error: " + e.message);
-        });
-
+        // Error aane par auto-reload feature
         playerInstance.on('error', function(e) {
-            console.error("Playback error: " + e.message);
+            console.log("Error detected, retrying in 3 seconds...");
+            setTimeout(function() {
+                playerInstance.load();
+                playerInstance.play();
+            }, 3000);
+        });
+
+        // Buffer alert handling
+        playerInstance.on('buffer', function() {
+            console.warn("Video buffering... optimization active.");
         });
     </script>
 </body>
