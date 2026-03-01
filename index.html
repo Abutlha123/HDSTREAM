@@ -9,6 +9,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.11/shaka-player.compiled.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.11/controls.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.11/shaka-player.ui.js"></script>
+    
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
     
     <style>
@@ -27,140 +28,140 @@
             color: var(--text); display: flex; flex-direction: column; align-items: center; min-height: 100vh;
         }
 
-        /* Video Container Styling */
+        .shaka-spinner-container { display: none !important; }
+
+        #contentWrapper { display: flex; width: 100%; flex-direction: column; align-items: center; }
         .container { width: 100%; max-width: 1100px; padding: 15px; box-sizing: border-box; }
+
         .video-wrapper {
             position: relative; background: #000; border-radius: var(--radius);
             overflow: hidden; box-shadow: 0 0 30px rgba(0, 210, 255, 0.2);
             border: 1px solid var(--border); aspect-ratio: 16 / 9; width: 100%;
         }
 
-        /* UI Elements */
-        .status-bar { display: flex; align-items: center; gap: 8px; font-size: 12px; margin-bottom: 10px; }
+        .status-bar {
+            display: flex; align-items: center; gap: 8px; font-size: 12px; margin-bottom: 10px;
+        }
         .dot { width: 8px; height: 8px; background: #444; border-radius: 50%; }
         .dot.active { background: #00ff88; box-shadow: 0 0 10px #00ff88; animation: blink 1s infinite; }
         @keyframes blink { 50% { opacity: 0.5; } }
 
         .channel-info {
             padding: 20px; background: var(--card-bg); border-radius: var(--radius); 
-            margin: 20px 0; border: 1px solid var(--border);
+            margin: 20px 0; border: 1px solid var(--border); width: 100%; box-sizing: border-box;
         }
-
-        .refresh-btn {
-            background: var(--accent); border: none; color: #000; 
-            padding: 10px 20px; border-radius: 8px; font-weight: 600; 
-            cursor: pointer; transition: 0.3s;
-        }
-
-        /* Grid Layout */
         .grid-header { margin: 25px 0 15px; font-weight: 800; border-left: 4px solid var(--accent); padding-left: 15px; align-self: flex-start; }
-        .channel-grid { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); 
-            gap: 15px; width: 100%; padding-bottom: 50px;
-        }
+        .channel-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; width: 100%; padding-bottom: 50px;}
         .channel-card {
-            background: var(--card-bg); border: 1px solid var(--border); padding: 15px;
+            background: var(--card-bg); border: 1px solid var(--border); padding: 20px 15px;
             border-radius: var(--radius); text-align: center; cursor: pointer; transition: 0.3s;
         }
-        .channel-card:hover { transform: translateY(-5px); border-color: var(--accent); background: rgba(0, 210, 255, 0.15); }
+        .channel-card:hover { transform: translateY(-3px); border-color: var(--accent); background: rgba(0, 210, 255, 0.1); }
     </style>
 </head>
 <body onload="initApp()">
 
-<div class="container">
-    <div class="status-bar">
-        <div id="statusDot" class="dot"></div>
-        <span id="statusText">INITIALIZING...</span>
-    </div>
-
-    <div class="video-wrapper">
-        <div id="video-container" data-shaka-player-container style="width:100%; height:100%;">
-            <video id="video" data-shaka-player autoplay muted playsinline style="width:100%;height:100%"></video>
+<div id="contentWrapper">
+    <div class="container" id="playerTop">
+        
+        <div class="status-bar">
+            <div id="statusDot" class="dot"></div>
+            <span id="statusText" style="color: #aaa; text-transform: uppercase; letter-spacing: 1px;">Checking Connection...</span>
         </div>
-    </div>
 
-    <div class="channel-info">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-            <div>
-                <h2 id="currentName" style="margin:0; font-size:1.2rem;">Select a Channel</h2>
-                <p style="margin: 5px 0 0; font-size: 12px; color: #888;">GitHub Live Hosting Active</p>
+        <div class="video-wrapper" id="mainPlayer">
+            <div id="video-container" data-shaka-player-container>
+                <video id="video" data-shaka-player autoplay muted playsinline style="width:100%;height:100%"></video>
             </div>
-            <button class="refresh-btn" onclick="refreshStream()">🔄 REFRESH PLAYER</button>
         </div>
-    </div>
 
-    <div class="grid-header">PREMIUM CHANNELS</div>
-    <div id="channelGrid" class="channel-grid"></div>
+        <div class="channel-info">
+            <h2 id="currentName" style="margin:0; font-size:1.1rem;">Welcome to SK STAR</h2>
+            <p id="trafficInfo" style="margin: 5px 0 0; font-size: 12px; color: #888;">Traffic Optimizer Active</p>
+        </div>
+
+        <div class="grid-header">Live Channels</div>
+        <div id="channelGrid" class="channel-grid"></div>
+    </div>
 </div>
 
 <script>
     const CHANNELS = [
-        { name: "Star Sports 1 Hindi", url: "https://jiotvpllive.cdn.jio.com/bpk-tv/Star_Sports_HD1_Hindi_BTS/output/index.mpd", kId: "8ea9b607549252068e260a5f4d7dd321", key: "350c0aaffedf51cc1502e9543c7c885e" },
-        { name: "PAK VS NZ LIVE", url: "https://a201aivottlinear-a.akamaihd.net/OTTB/iad-nitro/live/clients/dash/enc/yiiftorhi8/out/v1/be0f7019b1c448f185520be36ff5c809/cenc.mpd", kId: "04ef2776a130e77f2e829d95bdc94d4b", key: "203f0b19e11497baf5910937486692d7" },
+        { name: "Star Sports 1 Hindi - New", url: "https://jiotvbpkmob.cdn.jio.com/bpk-tv/Star_Sports_HD1_Hindi_BTS/output/index.mpd", kId: "400131994b445d8c8817202248760fda", key: "2d56cb6f07a75b9aff165d534ae2bfc4" },
+        { name: "Zimbabwe🇿🇼 VS SOUTH AFRICAN🇿🇦", url: "https://bks02.starhubgo.com/bpk-token/1aa@ieky51nxib5phbtop0xjruq5x1crc45oignjfvba/bpk-tv/HubSports4HDnew/output/manifest.mpd", kId: "9a29d4f3b6e540b3aa2f36927c01b6f4", key: "57b670b45b5cb453a9f48fa975b702c1" },
+        { name: "Star Sports 1 Hindi", url: "https://jiotvbpkmob.cdn.jio.com/bpk-tv/Star_Sports_HD1_Hindi_BTS/output/index.mpd", kId: "eb10fed8295930188989505872952862", key: "4c947889f89a9c5364811a0b388701" },
+        { name: "Star Sports 2", url: "https://jiotvbpkmob.cdn.jio.com/bpk-tv/Star_Sports_2_BTS/output/index.mpd", kId: "eb10d8295930188989505872952862", key: "4c9475c889f89a9c5364811a0b388701" },
         { name: "Sports 18 1 HD", url: "https://jiotvbpkmob.cdn.jio.com/bpk-tv/Sports18_1_HD_BTS/output/index.mpd", kId: "eb10fed8295930188989505972952862", key: "4c9475c889f89a9c5364811a0b388701" },
-        { name: "Star Sports 2", url: "https://jiotvbpkmob.cdn.jio.com/bpk-tv/Star_Sports_2_BTS/output/index.mpd", kId: "eb10d8295930188989505872952862", key: "4c9475c889f89a9c5364811a0b388701" }
+        { name: "Star Sports Telugu", url: "https://jiotvbpkmob.cdn.jio.com/bpk-tv/Star_Sports_1_Telugu_BTS/output/index.mpd", kId: "200a6dd89c6b5a48b9991d8ab57fc7d2", key: "1f62834669a97e92ea1f3263274853fc" }
     ];
 
-    let player, video, ui, currentChannel;
+    let player, video, ui;
     const authCookie = "__hdnea__=st=1772241887~exp=1772328287~acl=/*~hmac=c2276b495783dbb09e00bbbf9f38c98f7d06d932a86c8364b74b848141627e13";
 
     async function initApp() {
         video = document.getElementById('video');
         const container = document.getElementById('video-container');
+        
         shaka.polyfill.installAll();
-
         player = new shaka.Player(video);
-        ui = new shaka.ui.Overlay(player, container, video);
         
         player.configure({
-            streaming: { bufferingGoal: 30, rebufferingGoal: 2, lowLatencyMode: true },
-            manifest: { retryParameters: { maxAttempts: 5 } }
+            streaming: {
+                bufferingGoal: 45,
+                rebufferingGoal: 1,
+                bufferBehind: 15,
+                jumpLargeGaps: true,
+                lowLatencyMode: true,
+                retryParameters: { maxAttempts: 20, baseDelay: 300, backoffFactor: 1.1 }
+            },
+            manifest: { retryParameters: { maxAttempts: 20, baseDelay: 300 } },
+            abr: { enabled: true }
         });
 
-        // Request Filter for Cookies/Headers
+        ui = new shaka.ui.Overlay(player, container, video);
+        
         player.getNetworkingEngine().registerRequestFilter((type, request) => {
-            request.headers['User-Agent'] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)";
+            request.headers['User-Agent'] = "plaYtv/7.1.5 (Linux;Android 13)";
             if (request.uris[0].includes('jio') || request.uris[0].includes('akamaihd')) {
                 const sep = request.uris[0].includes('?') ? '&' : '?';
                 request.uris[0] += sep + authCookie;
             }
         });
 
-        video.addEventListener('playing', () => updateStatus('LIVE - STABLE', true));
-        video.addEventListener('waiting', () => updateStatus('BUFFERING...', false));
-        player.addEventListener('error', (e) => updateStatus('STREAM ERROR', false));
-
+        video.addEventListener('waiting', () => updateStatus('Buffering...', false));
+        video.addEventListener('playing', () => updateStatus('Live - Stable', true));
+        player.addEventListener('error', (e) => updateStatus('Traffic Error - Retrying...', false));
+        
         setupGrid();
         loadChannel(CHANNELS[0]);
     }
 
+    function updateStatus(text, isActive) {
+        const dot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        statusText.innerText = text;
+        if(isActive) dot.classList.add('active');
+        else dot.classList.remove('active');
+    }
+
     async function loadChannel(ch) {
-        currentChannel = ch;
         try {
-            updateStatus('CONNECTING...', false);
+            updateStatus('Connecting...', false);
             document.getElementById('currentName').innerText = ch.name;
             await player.configure({ drm: { clearKeys: { [ch.kId]: ch.key } } });
             await player.load(ch.url);
-        } catch (e) {
-            updateStatus('LOAD FAILED', false);
-        }
-    }
-
-    function refreshStream() { if(currentChannel) loadChannel(currentChannel); }
-
-    function updateStatus(text, active) {
-        document.getElementById('statusText').innerText = text;
-        document.getElementById('statusDot').className = active ? 'dot active' : 'dot';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        } catch (e) { updateStatus('Server Busy - Switching...', false); }
     }
 
     function setupGrid() {
         const grid = document.getElementById('channelGrid');
+        grid.innerHTML = '';
         CHANNELS.forEach(ch => {
             const card = document.createElement('div');
             card.className = 'channel-card';
-            card.innerText = ch.name;
             card.onclick = () => loadChannel(ch);
+            card.innerText = ch.name;
             grid.appendChild(card);
         });
     }
