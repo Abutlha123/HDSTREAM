@@ -2,75 +2,159 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JD Player - Lag Fix</title>
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+    <title>TV4WAP - Premium Fix</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.3.5/controls.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.3.5/shaka-player.ui.js"></script>
     
-    <script src="https://content.jwplatform.com/libraries/SAHhwvZq.js"></script>
-
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: #000; overflow: hidden; }
-        #player { position: absolute; top: 0; left: 0; width: 100% !important; height: 100% !important; }
+        :root { --primary-gradient: linear-gradient(90deg, #00c6ff 0%, #0072ff 100%); --bg-color: #f4f6f9; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Poppins', sans-serif; background-color: var(--bg-color); padding-top: 65px; padding-bottom: 85px; }
+        header { position: fixed; top: 0; width: 100%; height: 60px; z-index: 1000; background: var(--primary-gradient); display: flex; align-items: center; padding: 0 15px; color: white; font-weight: 900; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+        #player-wrapper { display: none; width: 100%; background: #000; position: sticky; top: 60px; z-index: 999; }
+        video { width: 100%; aspect-ratio: 16/9; }
+        .grid-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 15px; max-width: 800px; margin: 0 auto; }
+        .exam-card { background: #fff; border-radius: 12px; padding: 10px; text-align: center; border: 1px solid #eee; cursor: pointer; }
+        .card-icon-bg { height: 65px; display: flex; align-items: center; justify-content: center; background: #f8f9fa; border-radius: 8px; margin-bottom: 8px; }
+        .card-icon-bg img { max-width: 90%; max-height: 90%; object-fit: contain; }
+        .exam-card b { font-size: 10px; font-weight: 700; color: #333; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .btn-container { padding: 10px 15px; display: none; }
+        .back-btn { background: #333; color: white; border: none; padding: 8px 18px; border-radius: 20px; font-size: 12px; cursor: pointer; }
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 70px; background: #fff; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #eee; z-index: 1000; }
+        .nav-item { color: #888; text-align: center; font-size: 10px; text-decoration: none; cursor: pointer; }
+        .nav-item.active { color: #0072ff; }
+        .nav-item i { font-size: 20px; display: block; margin-bottom: 2px; }
     </style>
 </head>
 <body>
 
-    <div id="player"></div>
+<header>TV4WAP<span style="color:#FFD700">.SITE</span></header>
 
-    <script>
-        const playerInstance = jwplayer("player").setup({
-            playlist: [{
-                title: "JD Live Stream",
-                image: "https://i.ibb.co/Wvjr6mD/20240119-191942.png",
-                sources: [{
-                    file: "https://otte.live.fly.ww.aiv-cdn.net/lhr-nitro/live/dash/enc/ecp6xidc5d/out/v1/b8a94677c56e4411aef7ecc2431cec0a/cenc.mpd",
-                    type: "dash",
-                    drm: {
-                        clearkey: {
-                            keyId: "0c1cb3e9514dddd75896a7f60a03decb",
-                            key: "963fb175f70769c8d56fc44c843808b3"
-                        }
-                    }
-                }]
-            }],
-            width: "100%",
-            height: "100%",
-            autostart: true,
-            mute: false,
-            volume: 100,
-            controls: true,
-            // --- Lag aur Buffering Fix Settings ---
-            dashjsConfig: {
-                debug: { logLimit: 1 },
-                streaming: {
-                    buffer: {
-                        bufferTimeAtTopQuality: 30, // 30 seconds buffer load karega
-                        stableBufferTime: 20,
-                        initialBufferLevel: 10
-                    },
-                    lowLatencyEnabled: true,
-                    abr: {
-                        initialBitrate: { audio: -1, video: 500 } // Kam speed se start hoga taaki atke nahi
-                    }
-                }
-            },
-            // ---------------------------------------
-            visualquality: true,
-            stretching: "uniform"
-        });
+<div id="player-wrapper">
+    <div data-shaka-player-container><video autoplay data-shaka-player id="video"></video></div>
+</div>
 
-        // Error aane par auto-reload feature
-        playerInstance.on('error', function(e) {
-            console.log("Error detected, retrying in 3 seconds...");
-            setTimeout(function() {
-                playerInstance.load();
-                playerInstance.play();
-            }, 3000);
-        });
+<div class="btn-container" id="controls">
+    <button class="back-btn" onclick="showApps()"><i class="fas fa-arrow-left"></i> Categories</button>
+</div>
 
-        // Buffer alert handling
-        playerInstance.on('buffer', function() {
-            console.warn("Video buffering... optimization active.");
+<div class="grid-container" id="main-grid"></div>
+
+<nav class="bottom-nav">
+    <div class="nav-item active" onclick="showApps()"><i class="fas fa-th-large"></i><span>Apps</span></div>
+    <div class="nav-item" onclick="location.reload()"><i class="fas fa-sync-alt"></i><span>Refresh</span></div>
+    <div class="nav-item" onclick="window.open('https://t.me/your_telegram')"><i class="fab fa-telegram-plane"></i><span>Join</span></div>
+</nav>
+
+<script>
+    let player;
+    let ui;
+    const proxies = [
+        "https://corsproxy.io/?",
+        "https://api.allorigins.win/raw?url="
+    ];
+    let currentProxyIdx = 0;
+
+    const APPLIST_URL = "https://raw.githubusercontent.com/Shubhamkur/index/refs/heads/main/applist";
+
+    async function initPlayer() {
+        if (player) return;
+        const video = document.getElementById('video');
+        player = new shaka.Player(video);
+        ui = new shaka.ui.Overlay(player, document.getElementById('player-wrapper'), video);
+
+        player.getNetworkingEngine().registerRequestFilter((type, request) => {
+            request.headers['User-Agent'] = 'billatvoriginals';
+            if (type !== shaka.net.NetworkingEngine.RequestType.LICENSE) {
+                request.uris[0] = proxies[currentProxyIdx] + encodeURIComponent(request.uris[0]);
+            }
         });
-    </script>
+    }
+
+    async function fetchWithRetry(url) {
+        try {
+            const res = await fetch(proxies[0] + encodeURIComponent(url));
+            if (!res.ok) throw new Error();
+            return await res.json();
+        } catch (e) {
+            currentProxyIdx = 1; // Fallback to allorigins
+            const res = await fetch(proxies[1] + encodeURIComponent(url));
+            return await res.json();
+        }
+    }
+
+    async function showApps() {
+        document.getElementById('player-wrapper').style.display = 'none';
+        document.getElementById('controls').style.display = 'none';
+        if(player) await player.unload();
+        
+        const grid = document.getElementById('main-grid');
+        grid.innerHTML = "<p style='grid-column: span 3; text-align:center;'>Loading Categories...</p>";
+
+        try {
+            const data = await fetchWithRetry(APPLIST_URL);
+            grid.innerHTML = "";
+            data.forEach(app => {
+                const div = document.createElement('div');
+                div.className = 'exam-card';
+                div.onclick = () => handleAppClick(app);
+                div.innerHTML = `<div class="card-icon-bg"><img src="${app.logo}"></div><b>${app.name}</b>`;
+                grid.appendChild(div);
+            });
+        } catch (e) { 
+            grid.innerHTML = "<div style='grid-column: span 3; text-align:center;'>Error loading apps.<br><button onclick='showApps()' style='margin-top:10px; padding:5px 15px;'>Retry</button></div>"; 
+        }
+    }
+
+    function handleAppClick(app) {
+        if (app.url.includes('.json') || app.url.includes('raw.githubusercontent')) {
+            showChannels(app.url);
+        } else {
+            window.open(app.url, '_blank');
+        }
+    }
+
+    async function showChannels(jsonUrl) {
+        const grid = document.getElementById('main-grid');
+        grid.innerHTML = "<p style='grid-column: span 3; text-align:center;'>Loading Channels...</p>";
+        document.getElementById('controls').style.display = 'block';
+
+        try {
+            const data = await fetchWithRetry(jsonUrl);
+            const channels = data.data || data; 
+            grid.innerHTML = "";
+            channels.forEach(ch => {
+                const div = document.createElement('div');
+                div.className = 'exam-card';
+                div.onclick = () => playStream(ch);
+                div.innerHTML = `<div class="card-icon-bg"><img src="${ch.logo || 'https://placehold.co/100'}"></div><b>${ch.name || ch.title}</b>`;
+                grid.appendChild(div);
+            });
+        } catch (e) { grid.innerHTML = "<p style='grid-column: span 3; text-align:center;'>Error loading channel list.</p>"; }
+    }
+
+    async function playStream(ch) {
+        if (!player) await initPlayer();
+        document.getElementById('player-wrapper').style.display = 'block';
+        window.scrollTo(0,0);
+
+        const manifest = ch.manifest || ch.url || `https://jiotvbpkmob.cdn.jio.com/bpk-tv/${ch.id}/output/index.mpd`;
+        const license = "https://aqfadtv.xyz/clearkey/results.php?keyid=5181d3e6698055578cedc5bfc86b3e56&key=3dca7917d8cf9bb7095dc72b48bdcd3c";
+
+        player.configure({ drm: { servers: { 'org.w3.clearkey': proxies[currentProxyIdx] + encodeURIComponent(license) } } });
+
+        try {
+            await player.load(proxies[currentProxyIdx] + encodeURIComponent(manifest));
+        } catch (e) { 
+            console.error(e);
+            alert("Playback Failed. Link might be expired or blocked."); 
+        }
+    }
+
+    window.onload = showApps;
+</script>
 </body>
 </html>
