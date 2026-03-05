@@ -1,317 +1,134 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
-    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
-    <title>HD STREAM - Premium Edition</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
-    
-    <style type="text/css">
-        /* --- 1. GLOBAL RESET & THEME --- */
-        :root {
-            --primary-gradient: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%);
-            --bg-color: #f0f2f5;
-            --card-bg: #ffffff;
-            --accent: #0072ff;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    <title>HD STREAM - Ultimate Sports TV</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.16.3/controls.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.16.3/shaka-player.ui.js"></script>
+    <style>
+        :root { --accent: #e50914; --bg: #0e1a2b; --card: #152a3e; --text: #f0f6fc; --hover: #1f3d5c; }
+        html { scroll-behavior: smooth; }
+        body { margin: 0; font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--text); display: flex; justify-content: center; padding: 10px; min-height: 100vh; align-items: center; }
         
-        body {
-            font-family: 'Poppins', sans-serif;
-            background-color: var(--bg-color);
-            color: #333;
-            padding-top: 70px;
-            padding-bottom: 90px;
-            overflow-x: hidden;
-        }
+        #lock-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; }
+        .lock-box { background: var(--card); padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center; width: 280px; }
+        .lock-box h2 { margin-bottom: 20px; color: var(--accent); }
+        .lock-box input { width: 80%; padding: 12px; border-radius: 8px; border: 2px solid var(--hover); background: #000; color: white; text-align: center; font-size: 1.2rem; letter-spacing: 5px; outline: none; margin-bottom: 15px; }
+        .lock-box button { background: var(--accent); color: white; border: none; padding: 10px 25px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
 
-        /* --- 2. HEADER --- */
-        header {
-            position: fixed; top: 0; left: 0; width: 100%; height: 65px;
-            z-index: 1000;
-            background: var(--primary-gradient);
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 0 15px;
-            box-shadow: 0 4px 12px rgba(0, 114, 255, 0.25);
-        }
-
-        .logo-box a {
-            font-size: 22px; font-weight: 800;
-            text-decoration: none; display: flex; align-items: center;
-        }
-        .logo-text-white { color: #ffffff; }
-        .logo-text-gold { color: #FFD700; margin-left: 2px; }
-
-        .header-icons { display: flex; gap: 8px; }
-        .tg-circle {
-            width: 35px; height: 35px; background: rgba(255,255,255,0.2);
-            backdrop-filter: blur(5px); border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            text-decoration: none; color: white; transition: 0.3s; border: 1px solid rgba(255,255,255,0.3);
-        }
-        .tg-circle:active { transform: scale(0.9); background: white; color: var(--accent); }
-
-        /* --- 3. BOTTOM NAV --- */
-        .bottom-nav {
-            position: fixed; bottom: 0; left: 0; width: 100%; height: 75px;
-            background: #ffffff; display: flex; justify-content: space-around;
-            border-top: 1px solid #e0e0e0; z-index: 1000;
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.05);
-        }
-
-        .nav-btn {
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            cursor: pointer; flex: 1; transition: 0.3s; border-top: 3px solid transparent;
-        }
-
-        .nav-svg { width: 28px; height: 28px; margin-bottom: 4px; transition: 0.3s; }
-        .nav-label { font-size: 11px; font-weight: 600; color: #888; }
-
-        .nav-btn.active { border-top-color: var(--accent); background: #f8faff; }
-        .nav-btn.active .nav-label { color: var(--accent); font-weight: 700; }
-        .nav-btn.active .nav-svg { transform: translateY(-2px); }
-
-        /* --- 4. GRID & CARDS --- */
-        .grid-container {
-            display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
-            padding: 10px; max-width: 900px; margin: 0 auto;
-        }
-
-        .exam-card {
-            background: var(--card-bg); border-radius: 15px; padding: 12px 8px;
-            text-align: center; border: 1px solid #ffffff;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.04); transition: 0.3s;
-            text-decoration: none; color: inherit;
-        }
-
-        .exam-card:active { transform: scale(0.94); background: #f0f0f0; }
-
-        .card-icon-bg {
-            width: 100%; height: 65px; background: #f8f9fa;
-            border-radius: 10px; display: flex; align-items: center; justify-content: center;
-            margin-bottom: 10px; overflow: hidden; border: 1px solid #eee;
-        }
-        .card-icon-bg img { width: 85%; height: 85%; object-fit: contain; }
-
-        .exam-card b {
-            font-size: 11px; font-weight: 700; color: #333;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;
-        }
-
-        /* --- 5. FILTERS --- */
-        .az-filter-container {
-            display: flex; gap: 8px; overflow-x: auto; padding: 10px 15px;
-            scrollbar-width: none; background: #fff; margin-bottom: 10px;
-        }
-        .az-btn {
-            background: #f0f2f5; border: none; padding: 6px 15px; border-radius: 20px;
-            font-size: 12px; font-weight: 700; color: #666; cursor: pointer; white-space: nowrap;
-        }
-        .az-btn.active { background: var(--accent); color: white; }
-
-        .filter-container {
-            padding: 0 15px; display: flex; gap: 10px; margin-bottom: 15px;
-        }
-        .search-input, .group-select {
-            flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 10px;
-            font-size: 13px; font-family: inherit; outline: none; background: white;
-        }
-
-        /* --- 6. MATCH CARDS --- */
-        .match-card {
-            background: white; border-radius: 20px; margin-bottom: 15px;
-            overflow: hidden; box-shadow: 0 8px 25px rgba(0,0,0,0.08);
-            border: 1px solid rgba(0,0,0,0.05);
-        }
-        .card-header-match {
-            padding: 10px; font-size: 11px; font-weight: 800; text-align: center; color: white;
-            text-transform: uppercase; letter-spacing: 1px;
-        }
-        .card-body-match { padding: 20px 15px; display: flex; justify-content: space-between; align-items: center; }
-        .team-logo { width: 55px; height: 55px; border-radius: 50%; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-bottom: 8px; }
-        .team-name { font-size: 10px; font-weight: 800; text-transform: uppercase; text-align: center; }
-        
-        .cd-circle {
-            width: 35px; height: 35px; background: #f0f2f5; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; color: var(--accent);
-        }
-
-        /* --- UTILS --- */
-        .view-section { display: none; animation: slideIn 0.4s ease; }
-        .active-view { display: block; }
-        @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-
-        .modal-overlay {
-            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7);
-            z-index: 2000; align-items: center; justify-content: center; padding: 20px;
-        }
-        .modal-content { background: white; padding: 25px; border-radius: 20px; width: 100%; max-width: 350px; text-align: center; }
+        #main-content { display: none; width: 100%; max-width: 900px; margin-top: 20px; }
+        .video-container { width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); position: relative; }
+        .channel-info { margin-top: 15px; padding: 15px; background: var(--card); border-radius: 12px; display: flex; flex-direction: column; gap: 5px; }
+        .channel-list { margin-top: 15px; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; max-height: 400px; overflow-y: auto; padding: 5px; }
+        .channel-list::-webkit-scrollbar { width: 6px; }
+        .channel-list::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 10px; }
+        .channel-btn { background: var(--card); border: 2px solid transparent; color: var(--text); padding: 15px 10px; border-radius: 8px; cursor: pointer; transition: 0.2s; font-weight: bold; text-align: center; font-size: 0.95rem; }
+        .channel-btn:hover { background: var(--hover); transform: translateY(-2px); }
+        .channel-btn.active { border-color: var(--accent); background: var(--hover); }
     </style>
 </head>
 <body>
 
-<header>
-    <div class="logo-box">
-        <a href="#"> <span class="logo-text-white">HD STREAM</span><span class="logo-text-gold">.WEB</span> </a>
-    </div>
-    <div class="header-icons">
-        <button class="tg-circle" onclick="toggleDisclaimer()"><i class="fas fa-shield-alt"></i></button>
-        <a class="tg-circle" href="https://t.me/livetvofficialapp"><i class="fab fa-telegram-plane"></i></a>
-    </div>
-</header>
-
-<div class="modal-overlay" id="disclaimer-modal">
-    <div class="modal-content">
-        <h3 style="color:var(--accent); margin-bottom:10px;">Disclaimer</h3>
-        <p style="font-size:12px; color:#666; margin-bottom:20px;">We do not host any videos. We only provide links to content available on the web. All copyrights belong to their respective owners.</p>
-        <button onclick="toggleDisclaimer()" style="background:var(--accent); color:white; border:none; padding:10px 30px; border-radius:10px; font-weight:700;">Close</button>
+<div id="lock-screen">
+    <div class="lock-box">
+        <h2>HD STREAM</h2>
+        <input type="password" id="pinInput" placeholder="ENTER PIN" maxlength="4">
+        <br>
+        <button onclick="checkPin()">UNLOCK</button>
+        <p id="error-msg" style="color: #FF6347; font-size: 0.8rem; margin-top: 10px; display: none;">Invalid PIN. Try again.</p>
     </div>
 </div>
 
-<div class="view-section active-view" id="home-view">
-    <div class="grid-container" id="app-grid">
-        <p style="text-align:center; grid-column:span 3; padding:50px;">Syncing Apps...</p>
+<div id="main-content">
+    <div class="video-container" id="videoContainer">
+        <video id="video" autoplay muted playsinline style="width:100%;height:100%"></video>
     </div>
+    <div class="channel-info">
+        <div style="font-weight: bold; font-size: 1.2rem; color: var(--accent);" id="currentName">Select a Sport Channel</div>
+        <div style="font-size: 0.85rem; color: #b0c4de;" id="currentStatus">Status: Ready</div>
+    </div>
+    <div class="channel-list" id="channelList"></div>
 </div>
-
-<div class="view-section" id="tvlist-view">
-    <div class="az-filter-container" id="az-bar"></div>
-    <div class="filter-container">
-        <input class="search-input" id="tv-search" onkeyup="filterTvList()" placeholder="Search channels...">
-        <select class="group-select" id="group-select" onchange="filterTvList()">
-            <option value="all">Groups</option>
-        </select>
-    </div>
-    <div class="grid-container" id="tvlist-container"></div>
-</div>
-
-<div class="view-section" id="sportstv-view">
-    <div class="grid-container" id="sportstv-container"></div>
-</div>
-
-<div class="view-section" id="matches-view">
-    <div id="matches-container" style="padding:15px;"></div>
-</div>
-
-<nav class="bottom-nav">
-    <div class="nav-btn active home-btn" onclick="switchTab('home')">
-        <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
-        <span class="nav-label">Home</span>
-    </div>
-    <div class="nav-btn tvlist-btn" onclick="switchTab('tvlist')">
-        <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line></svg>
-        <span class="nav-label">TV List</span>
-    </div>
-    <div class="nav-btn sports-btn" onclick="switchTab('sportstv')">
-        <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect><polyline points="17 2 12 7 7 2"></polyline></svg>
-        <span class="nav-label">Live</span>
-    </div>
-    <div class="nav-btn matches-btn" onclick="switchTab('matches')">
-        <svg class="nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
-        <span class="nav-label">Matches</span>
-    </div>
-</nav>
 
 <script>
-    // --- JS LOGIC (SIMPLIFIED & FIXED) ---
-    const APPLIST_URL = "https://raw.githubusercontent.com/Shubhamkur/index/refs/heads/main/applist";
-    let currentTvData = [];
+    let player;
+    let currentChannelIndex = 0;
+    const token = "st=1772661640~exp=1772748040~acl=/*~hmac=53dd96ee0e53798fa8fe90e83a64b6431771ddc782112a6493f100a645a61a52";
 
-    function toggleDisclaimer() {
-        const m = document.getElementById('disclaimer-modal');
-        m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
+    const channels = [
+        { name: "Star Sports HD 1", uri: "https://jiotvbpkmob.cdn.jio.com/bpk-tv/Star_Sports_HD1_BTS/output/index.mpd", kid: "965dc2ddb1d85138ad787999a7f30ca5", key: "859695076e67fe961836b564db6d689c" },
+        { name: "Star Sports HD 1 Hindi", uri: "https://jiotvbpkmob.cdn.jio.com/bpk-tv/Star_Sports_HD1_Hindi_BTS/output/index.mpd", kid: "400131994b445d8c8817202248760fda", key: "2d56cb6f07a75b9aff165d534ae2bfc4" },
+        { name: "Star Sports 1 Tamil", uri: "https://jiotvbpkmob.cdn.jio.com/bpk-tv/Star_Sports_1_Tamil_BTS/output/index.mpd", kid: "d0d750ebd52b5756aa7fb833f61ceece", key: "4ae62a20c030c918aad24193c1dda229" },
+        { name: "Star Sports 1", uri: "https://jiotvbpkmob.cdn.jio.com/bpk-tv/Star_Sports_1_BTS/output/index.mpd", kid: "df20894ec30954d3b28097c138f4cfda", key: "ff9b6292b1cddbd11a046029cb314634" },
+        { name: "Star Sports 1 Telugu", uri: "https://jiotvbpkmob.cdn.jio.com/bpk-tv/Star_Sports_1_Telugu_BTS/output/index.mpd", kid: "200a6dd89c6b5a48b9991d8ab57fc7d2", key: "1f62834669a97e92ea1f3263274853fc" },
+        { name: "Sports18 1 HD", uri: "https://jiotvbpkmob.cdn.jio.com/bpk-tv/Sports18_1_HD_BTS/output/index.mpd", kid: "bd1ea6a1c1fb5dcdb709434e0826bbc0", key: "f57f22cba32739ce7beb1fab3f3d060b" },
+        { name: "Sports18 1 SD", uri: "https://jiotvbpkmob.cdn.jio.com/bpk-tv/Sports18_1_SD_BTS/output/index.mpd", kid: "a3ed8dc0e0cb5d238da80ee0a85bd2e1", key: "67a96992e6406606f3480ab58d7f540c" }, 
+        { name: "WILLOW BY CRIZBUZZ ", uri: "https://a96aivottlinear-a.akamaihd.net/OTTB/iad-nitro/enc/wfdj3lglfg/out/v1/b2db8919b7f44ee38826dd1fa0c846d3/cenc.mpd", kid: "106c1cd8b773f4486335cd98f4d3b8d8", key: "167828189119ff2eda785eb4c0c7f35c" }
+    ];
+
+    function checkPin() {
+        if (document.getElementById('pinInput').value === "2728") {
+            document.getElementById('lock-screen').style.display = 'none';
+            document.getElementById('main-content').style.display = 'block';
+            init();
+        } else {
+            document.getElementById('error-msg').style.display = 'block';
+        }
     }
 
-    function switchTab(tab) {
-        document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active-view'));
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(tab + '-view').classList.add('active-view');
-        document.querySelector('.' + tab + '-btn').classList.add('active');
-        if(tab === 'tvlist' && currentTvData.length === 0) loadAllChannels();
-    }
+    async function init() {
+        const video = document.getElementById('video');
+        const container = document.getElementById('videoContainer');
+        player = new shaka.Player(video);
+        new shaka.ui.Overlay(player, container, video);
 
-    async function loadHome() {
-        try {
-            const r = await fetch(APPLIST_URL);
-            const d = await r.json();
-            const html = d.map(item => `
-                <div class="exam-card" onclick="openApp('${item.url}', '${item.jsonm3u}', '${item.id}')">
-                    <div class="card-icon-bg"><img src="${item.logo}"></div>
-                    <b>${item.name}</b>
-                </div>
-            `).join('');
-            document.getElementById('app-grid').innerHTML = html;
-        } catch(e) {}
-    }
+        // Auto-Reload Channel on Error (Instead of full page refresh)
+        player.addEventListener('error', () => {
+            console.log("Stream crashed, reloading channel...");
+            loadChannel(currentChannelIndex);
+        });
 
-    async function loadAllChannels() {
-        document.getElementById('tvlist-container').innerHTML = '<p style="grid-column:span 3; text-align:center;">Merging streams...</p>';
-        createAZBar();
-        try {
-            const r = await fetch(APPLIST_URL);
-            const apps = await r.json();
-            let all = [];
-            for(let app of apps) {
-                if(!app.url) continue;
-                try {
-                    const cr = await fetch(app.url);
-                    const cd = await cr.json();
-                    const items = cd.data || cd;
-                    all = [...all, ...items.map(i => ({...i, player: app.jsonm3u, appName: app.id}))];
-                } catch(e) {}
+        player.getNetworkingEngine().registerRequestFilter((type, request) => {
+            if (type === shaka.net.NetworkingEngine.RequestType.MANIFEST || type === shaka.net.NetworkingEngine.RequestType.SEGMENT) {
+                request.uris[0] += (request.uris[0].includes('?') ? '&' : '?') + "__hdnea__=" + token;
+                request.headers['User-Agent'] = "plaYtv/7.1.3 (Linux;Android 13)";
             }
-            currentTvData = all.sort((a,b) => (a.name||a.title).localeCompare(b.name||b.title));
-            filterTvList();
-        } catch(e) {}
+        });
+
+        const listDiv = document.getElementById('channelList');
+        channels.forEach((ch, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'channel-btn';
+            btn.id = 'btn-' + i;
+            btn.innerText = ch.name;
+            btn.onclick = () => loadChannel(i);
+            listDiv.appendChild(btn);
+        });
+        loadChannel(0);
     }
 
-    function createAZBar() {
-        const bar = document.getElementById('az-bar');
-        const letters = ['All', ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')];
-        bar.innerHTML = letters.map(l => `<button class="az-btn" onclick="filterLetter('${l}', this)">${l}</button>`).join('');
-        bar.querySelector('.az-btn').classList.add('active');
-    }
+    async function loadChannel(index) {
+        currentChannelIndex = index;
+        const ch = channels[index];
+        const statusEl = document.getElementById('currentStatus');
+        document.getElementById('currentName').innerText = ch.name;
+        statusEl.innerText = "Status: Loading...";
+        
+        document.querySelectorAll('.channel-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('btn-' + index).classList.add('active');
 
-    function filterLetter(l, btn) {
-        document.querySelectorAll('.az-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        const filtered = (l === 'All') ? currentTvData : currentTvData.filter(i => (i.name||i.title).toUpperCase().startsWith(l));
-        renderTv(filtered);
-    }
+        player.configure({ drm: { clearKeys: { [ch.kid]: ch.key } } });
 
-    function filterTvList() {
-        const q = document.getElementById('tv-search').value.toLowerCase();
-        const filtered = currentTvData.filter(i => (i.name||i.title).toLowerCase().includes(q));
-        renderTv(filtered);
+        try {
+            await player.load(ch.uri);
+            statusEl.innerText = "Status: Live";
+            statusEl.style.color = "#00FF7F";
+        } catch (e) {
+            statusEl.innerText = "Status: Retrying...";
+            setTimeout(() => loadChannel(index), 3000);
+        }
     }
-
-    function renderTv(data) {
-        const html = data.map(i => `
-            <a href="${i.player}/?id=${i.id}&name=${i.appName}" class="exam-card">
-                <div class="card-icon-bg"><img src="${i.logo}"></div>
-                <b>${i.name || i.title}</b>
-            </a>
-        `).join('');
-        document.getElementById('tvlist-container').innerHTML = html || '<p style="grid-column:span 3; text-align:center;">No channels.</p>';
-    }
-
-    function openApp(url, player, appId) {
-        switchTab('tvlist');
-        // Logic to filter specifically for this app
-        loadChannelsFromApp(url, player, appId);
-    }
-
-    async function loadChannelsFromApp(url, player, appId) {
-        const r = await fetch(url);
-        const d = await r.json();
-        const items = d.data || d;
-        currentTvData = items.map(i => ({...i, player, appName: appId}));
-        renderTv(currentTvData);
-    }
-
-    window.onload = loadHome;
 </script>
 </body>
 </html>
