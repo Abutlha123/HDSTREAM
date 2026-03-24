@@ -1,222 +1,121 @@
+<?php
+// ==========================================
+// 1. PROXY API LOGIC (Server-Side)
+// ==========================================
+
+// Agar request mein 'url' aata hai, toh yeh script Proxy ban jayegi
+if (isset($_GET['url']) && !empty($_GET['url'])) {
+    
+    // CORS Headers
+    header('Access-Control-Allow-Origin: *');
+    header('Access-Control-Allow-Methods: GET, OPTIONS');
+    header('Access-Control-Allow-Headers: *');
+
+    if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+        exit;
+    }
+
+    $url = $_GET['url'];
+
+    // cURL Setup
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+
+    // Spoofed User-Agent
+    curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36');
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Accept: */*'
+    ]);
+
+    $response = curl_exec($ch);
+    $contentType = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
+    curl_close($ch);
+
+    // Wahi headers wapas bhejna jo original video file ke hain
+    if ($contentType) {
+        header("Content-Type: $contentType");
+    }
+
+    echo $response;
+    exit; // YAHAN STOP KARNA ZAROORI HAI, taaki proxy request ke sath HTML na chala jaye
+}
+
+// ==========================================
+// 2. HTML PLAYER LOGIC (Client-Side)
+// ==========================================
+// Agar 'url' nahi hai, toh normal player load hoga
+?>
+<!DOCTYPE html>
 <html lang="en">
- <head> 
- </head>
- <body> 
-  <script>
-setTimeout(() => {
-    fetch('https://adstook.com/track', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            type: 'impression',
-            ad_type: 'banner',
-            advertiser_id: 1,
-            ad_id: 1,
-            page_url: window.location.href,
-            referrer: document.referrer,
-            screen_resolution: screen.width + 'x' + screen.height,
-            browser_language: navigator.language,
-            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-            utm_source: window.location.host
-        })
-    });
-}, 1500); // 1.5s delay
-</script> 
-  <meta charset="utf-8"> 
-  <meta name="viewport" content="width=device-width,initial-scale=1"> 
-  <title>WAPTV</title> 
-  <meta name="referrer" content="no-referrer"> 
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"> 
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.11/controls.min.css"> 
-  <style>
-    :root { --theme-color: #e50914; }
-    * { margin:0; padding:0; box-sizing:border-box; }
-    html, body { width:100%; height:100%; background:#000; overflow:hidden; font-family: 'Poppins', sans-serif; }
-    .shaka-video-container { position:fixed; inset:0; background:#000; display:flex; align-items:center; justify-content:center; }
-    video { width:100%; height:100%; object-fit:contain; background:#000; outline: none; }
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bypass User-Agent DRM Player</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.1/controls.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.1/shaka-player.ui.min.js"></script>
+    
+    <style>
+        body { background-color: #121212; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; font-family: sans-serif; }
+        .video-container { width: 90%; max-width: 800px; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
+        video { width: 100%; height: 100%; }
+    </style>
+</head>
+<body>
 
-    .custom-watermark {
-      position: absolute; top: 25px; right: 25px; z-index: 40; pointer-events: none;
-      background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(8px); padding: 6px 14px; 
-      border-radius: 8px; font-size: 13px; font-weight: 700; color: #fff;
-    }
+    <h2>Live Stream (Proxied)</h2>
+    <div class="video-container" data-shaka-player-container>
+        <video id="video" data-shaka-player autoplay controls></video>
+    </div>
 
-    #debug-status {
-      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      z-index: 50; color: #fff; background: rgba(20, 20, 20, 0.95);
-      padding: 15px 25px; font-size: 14px; font-weight: 500; border-radius: 8px;
-      opacity: 0; visibility: hidden; text-align: center;
-    }
-    #debug-status.show { opacity: 1; visibility: visible; }
-    #debug-status.error { border-bottom: 3px solid #ff4444; }
-    #debug-status.success { border-bottom: 3px solid #00C851; }
-    #debug-status.info { border-bottom: 3px solid #33b5e5; }
-    #debug-status.loading { border-bottom: 3px solid var(--theme-color); }
-  </style> 
-  <div class="shaka-video-container" id="player-container"> 
-   <div id="debug-status" class="show loading">
-    Fetching Channel Data...
-   </div> 
-   <video id="video" autoplay="" playsinline="" preload="metadata"></video> 
-   <div class="custom-watermark">
-    t.me/tv4wap
-   </div> 
-  </div> 
-  <script>
-    // --- ENCODED ANTI-TAMPER SYSTEM ---
-    (function(){
-        const _0x1a2b = [
-            '\x63\x75\x73\x74\x6f\x6d\x2d\x77\x61\x74\x65\x72\x6d\x61\x72\x6b', 
-            '\x74\x2e\x6d\x65\x2f\x74\x76\x34\x77\x61\x70', 
-            '\x69\x6e\x6e\x65\x72\x54\x65\x78\x74', 
-            '\x69\x6e\x63\x6c\x75\x64\x65\x73', 
-            '\x69\x6e\x6e\x65\x72\x48\x54\x4d\x4c', 
-            atob('PGRpdiBzdHlsZT0iY29sb3I6cmVkOyB0ZXh0LWFsaWduOmNlbnRlcjsgbWFyZ2luLXRvcDoyMCU7IGZvbnQtZmFtaWx5OnNhbnMtc2VyaWY7Ij48aDM+QWNjZXNzIERlbmllZDwvaDM+PHA+U3RyZWFtIHByb3RlY3Rpb24gdHJpZ2dlcmVkLjwvcD48L2Rpdj4='), 
-            '\x64\x65\x73\x74\x72\x6f\x79', 
-            '\x70\x6c\x61\x79\x65\x72', 
-            '\x67\x65\x74\x45\x6c\x65\x6d\x65\x6e\x74\x73\x42\x79\x43\x6c\x61\x73\x73\x4e\x61\x6d\x65'
-        ];
-        function _0x3c4d() {
-            const _0x5e6f = document[_0x1a2b[8]](_0x1a2b[0]);
-            let _0x7g8h = false;
-            for (let _0x9i0j = 0; _0x9i0j < _0x5e6f.length; _0x9i0j++) {
-                if (_0x5e6f[_0x9i0j][_0x1a2b[2]][_0x1a2b[3]](_0x1a2b[1])) {
-                    _0x7g8h = true;
-                    break;
+    <script>
+        // Aapki Original MPD URL
+        const originalManifestUri = 'https://qw.live.pv-cdn.net/OTTB/lhr-nitro/live/clients/dash/enc/fb6jy4pxts/out/v1/f8fa17f087564f51aa4d5c700be43ec4/cenc.mpd';
+        
+        // Proxy API ki location ab yahi same file hai (?url= lagane se trigger hogi)
+        const proxyApi = '?url=';
+
+        async function initPlayer() {
+            const video = document.getElementById('video');
+            const player = new shaka.Player(video);
+
+            // ClearKey DRM Keys Setup
+            player.configure({
+                drm: {
+                    clearKeys: {
+                        'f288380ca4cef9ad3f27a92a08e9bb8b': '9f18d26291d9230833501f7f822f6875'
+                    }
                 }
-            }
-            if (!_0x7g8h) {
-                document.body[_0x1a2b[4]] = _0x1a2b[5];
-                if (window[_0x1a2b[7]]) {
-                    try { window[_0x1a2b[7]][_0x1a2b[6]](); } catch(e) {}
+            });
+
+            // Shaka Player ki har request ko isi file ke PHP proxy engine par bhej do
+            player.getNetworkingEngine().registerRequestFilter(function(type, request) {
+                const originalUrl = request.uris[0];
+                if (!originalUrl.includes('?url=')) {
+                    request.uris[0] = proxyApi + encodeURIComponent(originalUrl);
                 }
+            });
+
+            try {
+                // Manifest load karna
+                const proxiedManifestUri = proxyApi + encodeURIComponent(originalManifestUri);
+                await player.load(proxiedManifestUri);
+                console.log('Video successfully loaded through internal Proxy!');
+            } catch (e) {
+                console.error('Error Code:', e.code, e);
+                alert('Stream load nahi hui. Error console mein check karein.');
             }
         }
-        _0x3c4d();
-        setInterval(_0x3c4d, 2000);
-    })();
 
-    // --- STREAMING PLAYER LOGIC ---
-    const COOKIE_SOURCE_URLS = [
-
-      "https://raw.githubusercontent.com/24sports-net/cookie-updater/refs/heads/main/cookie.json",
-      "https://oriby-streaming-proxy.sultanarabi161.workers.dev/https://webiptv.site/ck.txt",
-      "https://allinonereborn.online/jstrweb2/jstr.json",
-"https://raw.githubusercontent.com/vaathala00/jow/main/output.json",
-"https://allrounder-live.pages.dev/api/cookie.json",
-"https://jiotv.diwij76343.workers.dev"
-    ];
-    const CHANNELS_JSON_URL = "https://raw.githubusercontent.com/Shubhamkur/json/refs/heads/main/jspo";
-
-    const urlParams = new URLSearchParams(window.location.search);
-    const channelId = urlParams.get('id') || '204';
-    const statusEl = document.getElementById('debug-status');
-
-    function updateStatus(msg, type = 'info', forceKeep = false) {
-        statusEl.innerText = msg;
-        statusEl.className = `show ${type}`; 
-        console.log(`[${type.toUpperCase()}] ${msg}`);
-    }
-
-    async function fetchSmartCookie(url) {
-      try {
-        const response = await fetch(url, { signal: AbortSignal.timeout(4000) });
-        if (!response.ok) return "";
-        
-        const rawText = await response.text();
-        const match = rawText.match(/(__hdnea__=[^"'\s&|,\\]+)/);
-        
-        if (match) {
-            return match[1]; 
-        }
-        return "";
-      } catch (error) {
-        return ""; 
-      }
-    }
-
-    async function fetchConfig() {
-      try {
-        updateStatus("Fetching Channel Data...", "loading");
-        const channelRes = await fetch(CHANNELS_JSON_URL);
-        const channelList = await channelRes.json();
-        const channelData = channelList.find(c => String(c.id) === String(channelId));
-        
-        if (!channelData) {
-          updateStatus("Error: Channel ID not found!", "error", true);
-          return false;
-        }
-
-        updateStatus(`Checking Token Source...`, "loading");
-        let rawCookies = [];
-        for (let url of COOKIE_SOURCE_URLS) {
-           let cookie = await fetchSmartCookie(url);
-           if (cookie) rawCookies.push(cookie); 
-        }
-
-        let collectedCookies = [...new Set(rawCookies)];
-        if (collectedCookies.length === 0) collectedCookies.push(""); 
-        
-        const availableUrls = [channelData.url1, channelData.url2, channelData.url3].filter(Boolean);
-        return { streamUrls: availableUrls, keyId: channelData.keyId, key: channelData.key, cookiesList: collectedCookies, activeCookie: "" };
-      } catch (error) {
-        updateStatus("Critical Error connecting to GitHub JSON!", "error", true);
-        return false;
-      }
-    }
-
-    document.addEventListener('DOMContentLoaded', async () => {
-      const STREAM_CONFIG = await fetchConfig();
-      if (!STREAM_CONFIG) return;
-
-      shaka.polyfill.installAll();
-      const videoEl = document.getElementById('video');
-      const container = document.getElementById('player-container');
-      
-      // Attached to window so the kill switch can access it
-      window.player = new shaka.Player(videoEl);
-      const ui = new shaka.ui.Overlay(window.player, container, videoEl);
-
-      window.player.configure({
-        drm: { clearKeys: { [STREAM_CONFIG.keyId]: STREAM_CONFIG.key } },
-      });
-
-      window.player.getNetworkingEngine().registerRequestFilter((type, request) => {
-        request.headers['Referer'] = 'https://www.jiotv.com/';
-        if (STREAM_CONFIG.activeCookie) {
-          if (type === shaka.net.NetworkingEngine.RequestType.MANIFEST || type === shaka.net.NetworkingEngine.RequestType.SEGMENT) {
-            request.uris[0] = request.uris[0].split('?')[0] + '?' + STREAM_CONFIG.activeCookie;
-          }
-        }
-      });
-
-      let streamLoaded = false;
-      let lastErrorCode = "Unknown";
-
-      for (let c = 0; c < STREAM_CONFIG.cookiesList.length; c++) {
-        STREAM_CONFIG.activeCookie = STREAM_CONFIG.cookiesList[c]; 
-        
-        for (let i = 0; i < STREAM_CONFIG.streamUrls.length; i++) {
-          try {
-            updateStatus(`Testing Link ${i + 1}...`, "loading");
-            await window.player.load(STREAM_CONFIG.streamUrls[i]);
-            videoEl.play();
-            streamLoaded = true;
-            updateStatus(`Playing Live!`, "success");
-            setTimeout(() => { statusEl.classList.remove('show'); }, 2000);
-            break; 
-          } catch (e) {
-            lastErrorCode = e.code || "Network Blocked (CORS)";
-            console.error(e);
-          }
-        }
-        if (streamLoaded) break; 
-      }
-
-      if (!streamLoaded) {
-        updateStatus(`Failed. Error Code: ${lastErrorCode}`, "error", true);
-      }
-    });
-  </script> 
- </body>
+        document.addEventListener('DOMContentLoaded', () => {
+            shaka.polyfill.installAll();
+            if (shaka.Player.isBrowserSupported()) {
+                initPlayer();
+            } else {
+                alert('Browser supported nahi hai.');
+            }
+        });
+    </script>
+</body>
 </html>
