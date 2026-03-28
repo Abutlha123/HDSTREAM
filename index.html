@@ -1,121 +1,99 @@
 <?php
-// ==========================================
-// 1. PROXY API LOGIC (Server-Side)
-// ==========================================
-
-// Agar request mein 'url' aata hai, toh yeh script Proxy ban jayegi
-if (isset($_GET['url']) && !empty($_GET['url'])) {
-    
-    // CORS Headers
-    header('Access-Control-Allow-Origin: *');
-    header('Access-Control-Allow-Methods: GET, OPTIONS');
-    header('Access-Control-Allow-Headers: *');
-
-    if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-        exit;
-    }
-
+/* --- STEP 1: PHP PROXY (Server-side) --- */
+if (isset($_GET['url'])) {
     $url = $_GET['url'];
+    
+    // Hotstar required headers
+    $headers = [
+        'Cookie: hdntl=exp=1774782368~acl=%2f*~id=fbe2d54c5140a3af8ccb28505051dcfb~data=hdntl~hmac=7733b02d87951949e865a4054da4e32f668d88d708f4874d2e32841725a2e5a5',
+        'Origin: https://www.hotstar.com',
+        'Referer: https://www.hotstar.com/',
+        'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+    ];
 
-    // cURL Setup
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-
-    // Spoofed User-Agent
-    curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36');
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'Accept: */*'
-    ]);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
 
     $response = curl_exec($ch);
     $contentType = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
     curl_close($ch);
 
-    // Wahi headers wapas bhejna jo original video file ke hain
-    if ($contentType) {
-        header("Content-Type: $contentType");
-    }
-
+    header("Content-Type: $contentType");
     echo $response;
-    exit; // YAHAN STOP KARNA ZAROORI HAI, taaki proxy request ke sath HTML na chala jaye
+    exit; 
 }
-
-// ==========================================
-// 2. HTML PLAYER LOGIC (Client-Side)
-// ==========================================
-// Agar 'url' nahi hai, toh normal player load hoga
 ?>
+
+<!-- --- STEP 2: PLAYER (Client-side) --- -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bypass User-Agent DRM Player</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.1/controls.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.1/shaka-player.ui.min.js"></script>
-    
+    <title>JioTV PHP Player</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.3.5/shaka-player.compiled.debug.js"></script>
     <style>
-        body { background-color: #121212; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; font-family: sans-serif; }
-        .video-container { width: 90%; max-width: 800px; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
-        video { width: 100%; height: 100%; }
+        body { margin: 0; background: #000; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
+        #video-container { width: 100%; max-width: 800px; background: #111; border: 1px solid #333; }
+        video { width: 100%; display: block; }
+        .status-box { padding: 15px; text-align: center; font-size: 14px; }
+        #status { color: #ffcc00; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <h2>Live Stream (Proxied)</h2>
-    <div class="video-container" data-shaka-player-container>
-        <video id="video" data-shaka-player autoplay controls></video>
+    <div id="video-container">
+        <video id="video" controls autoplay playsinline></video>
+    </div>
+    
+    <div class="status-box">
+        Status: <span id="status">LOADING...</span>
     </div>
 
-    <script>
-        // Aapki Original MPD URL
-        const originalManifestUri = 'https://jiotvmblive.cdn.jio.com/bpk-tv/Disney_Channel_BTS/output/index.mpd';
-        
-        // Proxy API ki location ab yahi same file hai (?url= lagane se trigger hogi)
-        const proxyApi = '?url=';
+<script>
+    // In settings, use your actual manifest URL
+    const manifestUri = 'https://livetv.hotstar.com/mp1/gec-india-1540065788/fa6a4f0005ef4f90ab24484d165b0aaf/index.mpd?partner=jio-stb';
+    const clearKeys = {
+        '81872faa1d6b45fa9045cdeb2e310000': '9b88168e61274587a471962c46b94675'
+    };
 
-        async function initPlayer() {
-            const video = document.getElementById('video');
-            const player = new shaka.Player(video);
+    async function initApp() {
+        shaka.polyfill.installAll();
+        const video = document.getElementById('video');
+        const player = new shaka.Player(video);
+        const status = document.getElementById('status');
 
-            // ClearKey DRM Keys Setup
-            player.configure({
-                drm: {
-                    clearKeys: {
-                        '5181d3e6698055578cedc5bfc86b3e56': '3dca7917d8cf9bb7095dc72b48bdcd3c'
-                    }
-                }
-            });
+        player.configure({
+            drm: { clearKeys: clearKeys }
+        });
 
-            // Shaka Player ki har request ko isi file ke PHP proxy engine par bhej do
-            player.getNetworkingEngine().registerRequestFilter(function(type, request) {
-                const originalUrl = request.uris[0];
-                if (!originalUrl.includes('?url=')) {
-                    request.uris[0] = proxyApi + encodeURIComponent(originalUrl);
-                }
-            });
-
-            try {
-                // Manifest load karna
-                const proxiedManifestUri = proxyApi + encodeURIComponent(originalManifestUri);
-                await player.load(proxiedManifestUri);
-                console.log('Video successfully loaded through internal Proxy!');
-            } catch (e) {
-                console.error('Error Code:', e.code, e);
-                alert('Stream load nahi hui. Error console mein check karein.');
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            shaka.polyfill.installAll();
-            if (shaka.Player.isBrowserSupported()) {
-                initPlayer();
-            } else {
-                alert('Browser supported nahi hai.');
+        // Redirect requests through the PHP part of THIS SAME FILE
+        player.getNetworkingEngine().registerRequestFilter((type, request) => {
+            if (request.uris[0].startsWith('http')) {
+                const originalUri = request.uris[0];
+                // Get the current file's full URL without parameters
+                const selfUrl = window.location.href.split('?')[0];
+                request.uris = [selfUrl + '?url=' + encodeURIComponent(originalUri)];
             }
         });
-    </script>
+
+        try {
+            await player.load(manifestUri);
+            status.innerText = "PLAYING SUCCESSFUL";
+            status.style.color = "#00ff00";
+        } catch (e) {
+            status.innerText = "SHAKA ERROR: " + e.code;
+            status.style.color = "#ff4444";
+            console.error(e);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', initApp);
+</script>
 </body>
 </html>
