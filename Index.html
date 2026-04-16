@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> FAST 4K PLAYER PRO</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.11/shaka-player.compiled.js"></script>
+    <style>
+        :root { --bg: #020617; --accent: #00f2ff; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: var(--bg); color: #fff; font-family: sans-serif; height: 100vh; display: flex; flex-direction: column; }
+        
+        #video-section { width: 100%; background: #000; aspect-ratio: 16/9; position: relative; border-bottom: 2px solid var(--accent); }
+        video { width: 100%; height: 100%; }
+
+        #nav { padding: 10px; background: #0f172a; }
+        #search { width: 100%; padding: 12px; background: #020617; border: 1px solid #1e293b; color: #fff; border-radius: 8px; outline: none; }
+
+        #list-container { flex: 1; overflow-y: auto; padding: 10px; }
+        .ch-card { display: flex; align-items: center; gap: 12px; padding: 12px; background: #1e293b; margin-bottom: 8px; border-radius: 10px; cursor: pointer; }
+        .ch-card:hover { background: #334155; }
+        .ch-card img { width: 50px; height: 35px; object-fit: contain; background: #fff; border-radius: 5px; }
+        .ch-name { font-size: 14px; font-weight: bold; flex: 1; }
+        
+        #loader-msg { text-align: center; padding: 20px; color: var(--accent); font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div id="video-section">
+    <video id="player" controls autoplay playsinline></video>
+</div>
+
+<div id="nav">
+    <input type="text" id="search" placeholder="" Search Channels...">
+</div>
+
+<div id="list-container">
+    <div id="loader-msg"> Connecting to Server...</div>
+    <div id="grid"></div>
+</div>
+
+<script>
+    // 4K Playlist URL
+    const M3U_URL = "https://allinonereborn.online/playlist/push4knew.m3u8";
+    
+    // Backup Proxies (Agar ek fail ho toh dusra chale)
+    const PROXY_BACKUPS = [
+        "https://corsproxy.io/?",
+        "https://api.codetabs.com/v1/proxy?quest=",
+        "https://api.allorigins.win/raw?url="
+    ];
+
+    let allChannels = [];
+    let player;
+
+    async function init() {
+        shaka.polyfill.installAll();
+        player = new shaka.Player(document.getElementById('player'));
+        fetchPlaylist(0); // Start with first proxy
+    }
+
+    async function fetchPlaylist(proxyIndex) {
+        if (proxyIndex >= PROXY_BACKUPS.length) {
+            document.getElementById('loader-msg').innerHTML = " Server Error. Please use a VPN.";
+            return;
+        }
+
+        const currentProxy = PROXY_BACKUPS[proxyIndex];
+        
+        try {
+            const response = await fetch(currentProxy + encodeURIComponent(M3U_URL));
+            if (!response.ok) throw new Error();
+            
+            const data = await response.text();
+            parseM3U(data);
+        } catch (e) {
+            console.log("Proxy " + proxyIndex + " failed, trying next...");
+            fetchPlaylist(proxyIndex + 1);
+        }
+    }
+
+    function parseM3U(data) {
+        const lines = data.split('\n');
+        allChannels = [];
+        let currentItem = null;
+
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (line.startsWith("#EXTINF")) {
+                const name = line.split(',').pop().trim();
+                const logo = line.match(/tvg-logo="([^"]+)"/)?.[1] || "";
+                currentItem = { name, logo };
+            } else if (line.startsWith("http") && currentItem) {
+                currentItem.url = line;
+                allChannels.push(currentItem);
+                currentItem = null;
+            }
+        }
+
+        document.getElementById('loader-msg').style.display = 'none';
+        render(allChannels);
+    }
+
+    function render(list) {
+        const grid = document.getElementById('grid');
+        grid.innerHTML = list.map(ch => `
+            <div class="ch-card" onclick="play('${ch.url}')">
+                <img src="${ch.logo}" onerror="this.src='https://via.placeholder.com/50x35?text=TV'">
+                <div class="ch-name">${ch.name}</div>
+            </div>
+        `).join('');
+    }
+
+    async function play(url) {
+        try {
+            await player.load(url);
+            window.scrollTo(0,0);
+        } catch (e) {
+            alert("This channel is currently offline.");
+        }
+    }
+
+    // Instant Search
+    document.getElementById('search').oninput = (e) => {
+        const val = e.target.value.toLowerCase();
+        const filtered = allChannels.filter(c => c.name.toLowerCase().includes(val));
+        render(filtered);
+    };
+
+    init();
+</script>
+</body>
+</html>
